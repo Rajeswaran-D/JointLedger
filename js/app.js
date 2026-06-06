@@ -1,27 +1,44 @@
 // ===== PWA Install Prompt =====
 let deferredInstallPrompt = null;
+
+// Detect iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+// Detect if already installed (standalone mode)
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredInstallPrompt = e;
     const banner = document.getElementById('install-banner');
-    if (banner) banner.classList.remove('hidden');
+    if (banner && !isStandalone) banner.classList.remove('hidden');
+    
+    // Show settings install button
+    const settingsBtn = document.getElementById('settings-install-btn');
+    if (settingsBtn) settingsBtn.classList.remove('hidden');
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Show iOS instructions if not installed
+    if (isIOS && !isStandalone) {
+        const banner = document.getElementById('install-banner');
+        if (banner) {
+            banner.classList.remove('hidden');
+            const btn = document.getElementById('install-btn');
+            if (btn) btn.style.display = 'none'; // Hide the native install button for iOS
+            const title = banner.querySelector('p');
+            if (title) title.innerHTML = i18n.currentLang === 'ta' ? 'நிறுவ, ஷேர் ஐகானைத் தட்டி "முகப்புத்திரையில் சேர்" என்பதைத் தேர்ந்தெடுக்கவும்' : 'To install, tap Share and select "Add to Home Screen"';
+        }
+    }
+
     const installBtn = document.getElementById('install-btn');
     if (installBtn) {
-        installBtn.addEventListener('click', async () => {
-            if (deferredInstallPrompt) {
-                deferredInstallPrompt.prompt();
-                const result = await deferredInstallPrompt.userChoice;
-                if (result.outcome === 'accepted') {
-                    document.getElementById('install-banner').classList.add('hidden');
-                }
-                deferredInstallPrompt = null;
-            }
+        installBtn.addEventListener('click', () => {
+            app.triggerInstall();
         });
     }
 });
+
+// (Replaced above)
 
 // ===== MAIN APP =====
 const app = {
@@ -535,6 +552,24 @@ const app = {
             }
         };
         reader.readAsText(file);
+    },
+
+    async triggerInstall() {
+        if (deferredInstallPrompt) {
+            deferredInstallPrompt.prompt();
+            const result = await deferredInstallPrompt.userChoice;
+            if (result.outcome === 'accepted') {
+                const banner = document.getElementById('install-banner');
+                if (banner) banner.classList.add('hidden');
+                const settingsBtn = document.getElementById('settings-install-btn');
+                if (settingsBtn) settingsBtn.classList.add('hidden');
+            }
+            deferredInstallPrompt = null;
+        } else if (isIOS) {
+            alert(i18n.currentLang === 'ta' ? 'நிறுவ, ஷேர் ஐகானைத் தட்டி "முகப்புத்திரையில் சேர்" என்பதைத் தேர்ந்தெடுக்கவும்' : 'To install, tap the Share icon and select "Add to Home Screen"');
+        } else {
+            alert(i18n.currentLang === 'ta' ? 'இந்த உலாவியில் ஆப்ஸ் நிறுவல் கிடைக்கவில்லை.' : 'App installation is not available in this browser.');
+        }
     },
 
     async resetApp() {

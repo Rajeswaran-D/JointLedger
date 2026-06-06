@@ -201,8 +201,12 @@
             </div>
         </div>
 
-        <!-- Data -->
+        <!-- Data & Installation -->
         <div class="glass-card p-5 space-y-3">
+            <button onclick="app.triggerInstall()" id="settings-install-btn" class="touch-btn w-full text-lg gap-3 justify-start px-4 hidden" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span data-i18n="installBtn">Install App</span>
+            </button>
             <button onclick="app.exportData()" class="touch-btn w-full text-lg gap-3 justify-start px-4" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
                 <svg class="w-6 h-6" style="color: var(--accent)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 <span data-i18n="exportData">Export Data (Backup)</span>
