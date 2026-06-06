@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="JointLedger Lite - Smart joint-account expense management">
+    <title>JointLedger Lite</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JointLedger">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- =========== SPLASH SCREEN =========== -->
+<div id="splash-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center transition-opacity duration-700" style="background-color: var(--bg-primary)">
+    <div class="flex flex-col items-center animate-pulse">
+        <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-500 to-emerald-500 shadow-2xl mb-6 flex items-center justify-center">
+            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <h1 class="text-3xl font-extrabold" style="background: linear-gradient(to right, #60a5fa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">JointLedger Lite</h1>
+        <p class="mt-2 text-base" style="color: var(--text-muted)" data-i18n="appTagline">Smart Joint Accounts</p>
+    </div>
+</div>
+
+<!-- =========== MAIN APP =========== -->
+<main id="app-container" class="flex-1 overflow-y-auto pb-28 px-4 pt-4 hidden opacity-0 transition-opacity duration-500 no-scrollbar">
+
+    <!-- ====== INSTALL BANNER ====== -->
+    <div id="install-banner" class="install-banner mb-5 hidden">
+        <div class="flex-1">
+            <p class="text-white font-bold text-base" data-i18n="installTitle">Install JointLedger on your phone</p>
+        </div>
+        <button id="install-btn" class="bg-white text-blue-600 font-bold text-sm px-5 py-2.5 rounded-xl" data-i18n="installBtn">Install App</button>
+        <button id="install-dismiss" class="text-white/70 text-xs ml-1" onclick="document.getElementById('install-banner').classList.add('hidden')">✕</button>
+    </div>
+
+    <!-- ====== VIEW: DASHBOARD ====== -->
+    <div id="view-dashboard" class="view-section hidden space-y-5">
+        <!-- Header -->
+        <header class="flex justify-between items-center">
+            <h1 class="text-2xl font-extrabold" style="background: linear-gradient(to right, #60a5fa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">JointLedger</h1>
+            <button onclick="app.navigate('settings')" class="touch-btn w-12 h-12" style="background: var(--bg-surface)" aria-label="Settings">
+                <svg class="w-6 h-6" style="color: var(--text-secondary)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
+        </header>
+
+        <!-- Total Balance Card -->
+        <div class="glass-card p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <p class="text-base font-medium mb-1" style="color: var(--text-secondary)" data-i18n="totalBalance">Total Balance</p>
+            <h2 class="text-5xl font-extrabold tracking-tight mb-5" id="dash-total-balance">₹0</h2>
+            <div class="flex gap-4 border-t pt-4 mt-2" style="border-color: var(--border-color)" id="dash-member-balances">
+                <!-- JS fills this -->
+            </div>
+        </div>
+
+        <!-- Today + Monthly Stats -->
+        <div class="grid grid-cols-2 gap-4">
+            <div class="glass-card p-5">
+                <p class="text-sm font-medium mb-1" style="color: var(--text-secondary)" data-i18n="todaySpending">Today's Spending</p>
+                <p class="text-2xl font-bold" style="color: var(--danger)" id="dash-today-spent">₹0</p>
+            </div>
+            <div class="glass-card p-5">
+                <p class="text-sm font-medium mb-1" style="color: var(--text-secondary)" data-i18n="monthlySpending">This Month Spending</p>
+                <p class="text-2xl font-bold" style="color: var(--warning)" id="dash-monthly-spent">₹0</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div>
+            <h3 class="text-lg font-bold mb-3" data-i18n="quickActions">Quick Actions</h3>
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="app.openActionModal('contribution')" class="touch-btn flex-col gap-2 py-4 px-2" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1.5px solid rgba(16, 185, 129, 0.2); border-radius: 1.25rem;">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span class="text-sm font-bold" data-i18n="addMoney">Add Money</span>
+                </button>
+                <button onclick="app.openActionModal('expense')" class="touch-btn flex-col gap-2 py-4 px-2" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1.5px solid rgba(239, 68, 68, 0.2); border-radius: 1.25rem;">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+                    <span class="text-sm font-bold" data-i18n="addExpense">Add Expense</span>
+                </button>
+                <button onclick="app.openActionModal('shared')" class="touch-btn flex-col gap-2 py-4 px-2" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1.5px solid rgba(59, 130, 246, 0.2); border-radius: 1.25rem;">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    <span class="text-sm font-bold" data-i18n="sharedExpense">Shared</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="glass-card overflow-hidden">
+            <div class="p-4 flex justify-between items-center" style="border-bottom: 1px solid var(--border-color); background: var(--bg-surface)">
+                <h3 class="font-bold text-base" data-i18n="recentActivity">Recent Activity</h3>
+                <button onclick="app.navigate('transactions')" class="text-sm font-semibold" style="color: var(--accent)" data-i18n="viewAll">View All</button>
+            </div>
+            <div id="dash-recent-txns">
+                <!-- JS fills this -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== VIEW: TRANSACTIONS ====== -->
+    <div id="view-transactions" class="view-section hidden space-y-5">
+        <header class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold" data-i18n="navActivity">Activity</h1>
+            <button onclick="app.exportCSV()" class="touch-btn text-sm px-4" style="background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border-color)">Export CSV</button>
+        </header>
+        <input type="text" id="txn-search" onkeyup="app.renderTransactions()" class="form-input text-lg" data-i18n="description" placeholder="Search...">
+        <div class="glass-card overflow-hidden" id="txns-list">
+            <!-- JS fills this -->
+        </div>
+    </div>
+
+    <!-- ====== VIEW: MEMBERS ====== -->
+    <div id="view-members" class="view-section hidden space-y-5">
+        <header class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold" data-i18n="members">Members</h1>
+            <button onclick="app.openAddMemberModal()" class="touch-btn text-sm px-4" style="background: var(--accent); color: white;" data-i18n="addMember">+ Add Member</button>
+        </header>
+        <div class="space-y-3" id="members-list">
+            <!-- JS fills this -->
+        </div>
+        <div class="glass-card p-5 mt-4">
+            <h3 class="text-lg font-bold mb-3" data-i18n="whoOwesWho">Who Owes Who?</h3>
+            <div id="settlements-container" class="space-y-3">
+                <!-- JS fills this -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== VIEW: ANALYTICS ====== -->
+    <div id="view-analytics" class="view-section hidden space-y-5">
+        <h1 class="text-2xl font-bold" data-i18n="insights">Insights</h1>
+
+        <!-- Simple Text Insights -->
+        <div class="glass-card p-5">
+            <div id="simple-insights-list" class="space-y-4 text-lg">
+                <!-- JS fills this -->
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="glass-card p-5">
+            <h3 class="font-bold text-lg mb-4" data-i18n="spendingByCategory">Spending by Category</h3>
+            <div class="relative h-52 w-full"><canvas id="spendingChart"></canvas></div>
+        </div>
+
+        <!-- Health Score -->
+        <div class="glass-card p-5">
+            <h3 class="font-bold text-lg mb-4" data-i18n="fairShareScore">Fair Share Score</h3>
+            <div id="health-scores-list" class="space-y-5">
+                <!-- JS fills this -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== VIEW: SETTINGS ====== -->
+    <div id="view-settings" class="view-section hidden space-y-5">
+        <h1 class="text-2xl font-bold" data-i18n="settings">Settings</h1>
+
+        <!-- Language -->
+        <div class="glass-card p-5">
+            <h3 class="font-bold text-lg mb-3" data-i18n="language">Language</h3>
+            <div class="flex gap-3">
+                <button onclick="app.setLanguage('en')" id="lang-en-btn" class="chip-btn flex-1" style="border-color: var(--accent); background: var(--accent); color: white;">English</button>
+                <button onclick="app.setLanguage('ta')" id="lang-ta-btn" class="chip-btn flex-1">தமிழ்</button>
+            </div>
+        </div>
+
+        <!-- Theme -->
+        <div class="glass-card p-5">
+            <h3 class="font-bold text-lg mb-3" data-i18n="theme">Theme</h3>
+            <div class="flex gap-3">
+                <button onclick="app.setTheme('light')" id="theme-light-btn" class="chip-btn flex-1" data-i18n="lightMode">Light</button>
+                <button onclick="app.setTheme('dark')" id="theme-dark-btn" class="chip-btn flex-1" data-i18n="darkMode">Dark</button>
+                <button onclick="app.setTheme('system')" id="theme-system-btn" class="chip-btn flex-1" data-i18n="systemMode">Auto</button>
+            </div>
+        </div>
+
+        <!-- Data -->
+        <div class="glass-card p-5 space-y-3">
+            <button onclick="app.exportData()" class="touch-btn w-full text-lg gap-3 justify-start px-4" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+                <svg class="w-6 h-6" style="color: var(--accent)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <span data-i18n="exportData">Export Data (Backup)</span>
+            </button>
+            <button onclick="document.getElementById('import-file').click()" class="touch-btn w-full text-lg gap-3 justify-start px-4" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+                <svg class="w-6 h-6" style="color: var(--success)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span data-i18n="importData">Import Data (Restore)</span>
+            </button>
+            <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.importData(event)">
+            <button onclick="app.resetApp()" class="touch-btn w-full text-lg gap-3 justify-start px-4" style="background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2);">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <span data-i18n="resetAll">Reset All Data</span>
+            </button>
+        </div>
+    </div>
+</main>
+
+<!-- =========== BOTTOM NAVIGATION =========== -->
+<nav id="bottom-nav" class="fixed bottom-0 w-full glass-card rounded-none rounded-t-3xl p-3 pb-4 flex justify-around items-center z-40 transform translate-y-full transition-transform duration-500" style="border-top: 1px solid var(--border-color);">
+    <button onclick="app.navigate('dashboard')" class="nav-item flex flex-col items-center w-16 transition-colors" data-target="dashboard" style="color: var(--accent)" aria-label="Home">
+        <svg class="h-7 w-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        <span class="text-xs font-semibold" data-i18n="navHome">Home</span>
+    </button>
+    <button onclick="app.navigate('transactions')" class="nav-item flex flex-col items-center w-16 transition-colors" data-target="transactions" style="color: var(--text-muted)" aria-label="Activity">
+        <svg class="h-7 w-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+        <span class="text-xs font-semibold" data-i18n="navActivity">Activity</span>
+    </button>
+
+    <!-- FAB -->
+    <button onclick="app.openActionModal('expense')" class="relative -top-7 text-white p-5 rounded-full shadow-xl transform hover:scale-105 transition-all outline-none" style="background: var(--accent); box-shadow: 0 8px 24px var(--accent-glow)" aria-label="Add Transaction">
+        <svg class="h-9 w-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+    </button>
+
+    <button onclick="app.navigate('analytics')" class="nav-item flex flex-col items-center w-16 transition-colors" data-target="analytics" style="color: var(--text-muted)" aria-label="Insights">
+        <svg class="h-7 w-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <span class="text-xs font-semibold" data-i18n="navInsights">Insights</span>
+    </button>
+    <button onclick="app.navigate('members')" class="nav-item flex flex-col items-center w-16 transition-colors" data-target="members" style="color: var(--text-muted)" aria-label="Members">
+        <svg class="h-7 w-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <span class="text-xs font-semibold" data-i18n="navMembers">Members</span>
+    </button>
+</nav>
+
+<!-- =========== TRANSACTION MODAL =========== -->
+<div id="action-modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity flex items-end justify-center sm:items-center" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px)">
+    <div class="w-full sm:w-[420px] rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl transform translate-y-full sm:translate-y-0 sm:scale-95 transition-all duration-300" id="action-modal-content" style="background: var(--bg-surface)">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-xl font-bold" data-i18n="newTransaction">New Transaction</h3>
+            <button onclick="app.closeActionModal()" class="touch-btn w-10 h-10" style="color: var(--text-muted)" aria-label="Close">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <!-- Type Tabs -->
+        <div class="flex gap-2 mb-5 p-1.5 rounded-2xl" style="background: var(--bg-input)">
+            <button onclick="app.setActionType('expense')" id="btn-type-expense" class="flex-1 py-3 rounded-xl text-base font-bold transition-colors" style="background: var(--accent); color: white;" data-i18n="expense">Expense</button>
+            <button onclick="app.setActionType('contribution')" id="btn-type-contribution" class="flex-1 py-3 rounded-xl text-base font-bold transition-colors" style="color: var(--text-muted)" data-i18n="contribution">Add Money</button>
+        </div>
+
+        <!-- Quick Add Chips (visible only for contributions) -->
+        <div id="quick-add-chips" class="flex flex-wrap gap-2 mb-4 hidden">
+            <button type="button" onclick="app.quickFill(500)" class="chip-btn">+₹500</button>
+            <button type="button" onclick="app.quickFill(1000)" class="chip-btn">+₹1,000</button>
+            <button type="button" onclick="app.quickFill(2000)" class="chip-btn">+₹2,000</button>
+            <button type="button" onclick="app.quickFill(5000)" class="chip-btn">+₹5,000</button>
+        </div>
+
+        <form id="transaction-form" class="space-y-4" onsubmit="app.handleTransactionSubmit(event)">
+            <input type="hidden" id="txn-type" value="expense">
+
+            <div>
+                <label class="block text-sm font-semibold mb-1.5" style="color: var(--text-secondary)" data-i18n="amount">Amount (₹)</label>
+                <input type="number" id="txn-amount" step="0.01" required class="form-input text-2xl font-extrabold" placeholder="0" inputmode="decimal">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1.5" style="color: var(--text-secondary)" data-i18n="selectMember">Who?</label>
+                <select id="txn-member" required class="form-input text-lg">
+                </select>
+            </div>
+
+            <div id="category-container">
+                <label class="block text-sm font-semibold mb-1.5" style="color: var(--text-secondary)" data-i18n="category">Category</label>
+                <select id="txn-category" class="form-input text-lg">
+                    <option value="Food" data-i18n="catFood">🍔 Food</option>
+                    <option value="Travel" data-i18n="catTravel">🚗 Travel</option>
+                    <option value="Shopping" data-i18n="catShopping">🛍️ Shopping</option>
+                    <option value="Bills" data-i18n="catBills">🧾 Bills</option>
+                    <option value="Medical" data-i18n="catMedical">🏥 Medical</option>
+                    <option value="Education" data-i18n="catEducation">📚 Education</option>
+                    <option value="Entertainment" data-i18n="catEntertainment">🎬 Entertainment</option>
+                    <option value="Other" data-i18n="catOther">📦 Other</option>
+                </select>
+            </div>
+
+            <div id="split-container">
+                <label class="block text-sm font-semibold mb-1.5" style="color: var(--text-secondary)" data-i18n="splitType">Split Type</label>
+                <select id="txn-split" class="form-input text-lg">
+                    <option value="PERSONAL" data-i18n="personalExpense">Only Me</option>
+                    <option value="EQUAL" data-i18n="sharedEqually">Split Equally</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1.5" style="color: var(--text-secondary)" data-i18n="notes">Notes (Optional)</label>
+                <input type="text" id="txn-desc" required class="form-input text-lg" placeholder="">
+            </div>
+
+            <button type="submit" class="touch-btn w-full text-lg py-4" style="background: var(--accent); color: white; box-shadow: 0 8px 20px var(--accent-glow)" data-i18n="save">Save</button>
+        </form>
+    </div>
+</div>
+
+<!-- =========== ADD MEMBER MODAL =========== -->
+<div id="member-modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-5" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px)">
+    <div class="w-full max-w-sm rounded-3xl p-6 shadow-2xl transform scale-95 transition-all duration-300" id="member-modal-content" style="background: var(--bg-surface)">
+        <h3 class="text-xl font-bold mb-5" data-i18n="addMember">Add Member</h3>
+        <form onsubmit="app.handleAddMember(event)" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold mb-1.5" style="color: var(--text-secondary)" data-i18n="memberName">Name</label>
+                <input type="text" id="new-member-name" required class="form-input text-xl" placeholder="">
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="app.closeAddMemberModal()" class="touch-btn flex-1 text-lg" style="background: var(--bg-input); color: var(--text-secondary)" data-i18n="cancel">Cancel</button>
+                <button type="submit" class="touch-btn flex-1 text-lg" style="background: var(--accent); color: white" data-i18n="save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========== SCRIPTS =========== -->
+<script src="js/i18n.js"></script>
+<script src="js/db.js"></script>
+<script src="js/finance.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/app.js"></script>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').then(r => console.log('SW ok')).catch(e => console.error('SW fail', e));
+        });
+    }
+</script>
+</body>
+</html>
