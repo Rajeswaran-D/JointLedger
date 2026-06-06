@@ -18,8 +18,11 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Show iOS instructions if not installed
+    // Show settings install button for iOS since it doesn't fire beforeinstallprompt
     if (isIOS && !isStandalone) {
+        const settingsBtn = document.getElementById('settings-install-btn');
+        if (settingsBtn) settingsBtn.classList.remove('hidden');
+        
         const banner = document.getElementById('install-banner');
         if (banner) {
             banner.classList.remove('hidden');
